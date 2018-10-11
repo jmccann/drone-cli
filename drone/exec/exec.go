@@ -23,6 +23,8 @@ import (
 	"github.com/drone/envsubst"
 
 	"github.com/urfave/cli"
+
+	yamlv2 "gopkg.in/yaml.v2"
 )
 
 // Command exports the exec command.
@@ -275,7 +277,7 @@ var Command = cli.Command{
 			EnvVar: "DRONE_JOB_NUMBER",
 		},
 		cli.StringSliceFlag{
-			Name: "env, e",
+			Name:   "env, e",
 			EnvVar: "DRONE_ENV",
 		},
 	},
@@ -317,6 +319,18 @@ func exec(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// workaround to allow yaml anchors
+	var anyYAML map[string]interface{}
+	err = yamlv2.Unmarshal([]byte(confstr), &anyYAML)
+	if err != nil {
+		return err
+	}
+	b, err := yamlv2.Marshal(anyYAML)
+	if err != nil {
+		return err
+	}
+	confstr = string(b)
 
 	conf, err := yaml.ParseString(confstr)
 	if err != nil {
